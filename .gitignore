@@ -1,0 +1,15 @@
+# OS/Editor
+*.log
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# Node (на будущее)
+node_modules/
+dist/
+build/
+
+# Misc
+.env
