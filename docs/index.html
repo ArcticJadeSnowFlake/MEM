@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Три фото, наложенные и fadeOut по очереди</title>
+
+  <!-- Полная сборка jQuery (не slim) -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+          integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+          crossorigin="anonymous"></script>
+
+  <style>
+    :root { --w: min(92vw, 900px); }
+    body {
+      margin: 0; padding: 24px; background: #111; color: #eee;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      display: grid; place-items: center; gap: 16px;
+    }
+    .stage {
+      width: var(--w);
+      aspect-ratio: 16 / 9;        /* можно поменять, если у фото другое соотношение */
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #222;
+      box-shadow: 0 10px 28px rgba(0,0,0,.45);
+    }
+    /* ВСЕ картинки занимают один и тот же слой (наложение) */
+    .stage img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;          /* вписать без обрезки */
+      object-position: center;      /* центрировать изображение */
+      background: #000;             /* поля по краям, если пропорции не совпадают */
+      display: block;
+      user-select: none; -webkit-user-drag: none;
+    }
+    button {
+      border: 0; border-radius: 12px; padding: 10px 16px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>fadeOut</h1>
+
+  <div class="stage">
+    <!-- Порядок важен: последний img будет НАД остальными -->
+    <img src="3.jpg" alt="Кадр 1 (нижний слой)">      <!-- самый нижний -->
+    <img src="2.jpg" alt="Кадр 2 (средний слой)">
+    <img src="1.jpg" alt="Кадр 3 (верхний слой)">      <!-- исчезает первым -->
+  </div>
+
+  <button id="replay">Повторить анимацию</button>
+
+  <script>
+    $(function () {
+      const DURATION = 3000;                 
+      const $imgs = $(".stage img");        
+
+      // Ждём загрузки изображений, чтобы анимация шла плавно
+      function waitImages($set) {
+        const d = $.Deferred();
+        let left = $set.length;
+        if (!left) return d.resolve();
+        $set.each(function () {
+          if (this.complete) {
+            if (--left === 0) d.resolve();
+          } else {
+            $(this).one("load error", () => { if (--left === 0) d.resolve(); });
+          }
+        });
+        return d.promise();
+      }
+
+      function runSequence() {
+        // Сброс видимости и остановка возможных старых анимаций
+        $imgs.stop(true, true).css({ opacity: 1, display: "block" });
+
+        // Исчезаем сверху вниз: от последнего к первому
+        let i = $imgs.length - 1;
+        (function next() {
+          if (i < 0) return;
+          $imgs.eq(i).fadeOut(DURATION, function () {
+            i--;
+            next();
+          });
+        })();
+      }
+
+      waitImages($imgs).then(runSequence);
+      $("#replay").on("click", runSequence);
+    });
+  </script>
+</body>
+</html>
